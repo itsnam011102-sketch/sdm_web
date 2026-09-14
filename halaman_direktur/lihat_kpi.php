@@ -1,6 +1,6 @@
 <?php
 // ============================================
-// LIHAT KPI - pilih Divisi & Periode dulu, baru data muncul
+// LIHAT KPI - masukkan STB & Tahun, tampil data pegawai + nilai KPI
 // File ini ada di dalam folder halaman_direktur/, sejajar dengan direktur.php
 // ============================================
 
@@ -12,62 +12,59 @@ if (!$koneksi) {
 }
 mysqli_set_charset($koneksi, "utf8mb4");
 
-// ---------- Ambil daftar Divisi & Periode yang sudah pernah disimpan (untuk dropdown) ----------
-$daftarDivisi  = [];
-$resDivisi = mysqli_query($koneksi, "SELECT DISTINCT divisi FROM kpi_penilaian ORDER BY divisi");
-while ($row = mysqli_fetch_assoc($resDivisi)) {
-    $daftarDivisi[] = $row['divisi'];
-}
+$stbCari     = trim($_GET['stb'] ?? '');
+$periodeCari = trim($_GET['periode'] ?? '');
 
-$daftarPeriode = [];
-$resPeriode = mysqli_query($koneksi, "SELECT DISTINCT periode FROM kpi_penilaian ORDER BY periode DESC");
-while ($row = mysqli_fetch_assoc($resPeriode)) {
-    $daftarPeriode[] = $row['periode'];
-}
+$pegawai = null;
+$dataPerPerspektif = [];
+$sudahCari = ($stbCari !== '' && $periodeCari !== '');
 
-// ---------- Ambil pilihan user dari form (GET) ----------
-$divisiPilih  = $_GET['divisi'] ?? '';
-$periodePilih = $_GET['periode'] ?? '';
-$dataPerPerspektif = []; // hasil akhir yang mau ditampilkan
-$kpiPenilaianId = null;
+if ($sudahCari) {
 
-if ($divisiPilih !== '' && $periodePilih !== '') {
+    // 1. Ambil data pegawai dari tabel employe berdasarkan STB (kode_pegawai)
+    $stmtPegawai = mysqli_prepare($koneksi, "SELECT kode_pegawai, nama, jabatan, kantor, email, no_hp FROM employe WHERE kode_pegawai = ?");
+    mysqli_stmt_bind_param($stmtPegawai, "s", $stbCari);
+    mysqli_stmt_execute($stmtPegawai);
+    $resultPegawai = mysqli_stmt_get_result($stmtPegawai);
+    $pegawai = mysqli_fetch_assoc($resultPegawai);
+    mysqli_stmt_close($stmtPegawai);
 
-    // Cari id kpi_penilaian sesuai divisi + periode yang dipilih
-    $stmt = mysqli_prepare($koneksi, "SELECT id, created_at, updated_at FROM kpi_penilaian WHERE divisi = ? AND periode = ?");
-    mysqli_stmt_bind_param($stmt, "ss", $divisiPilih, $periodePilih);
-    mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
-    $penilaian = mysqli_fetch_assoc($result);
+    if ($pegawai) {
+        // 2. Cari kpi_penilaian sesuai STB + Tahun
+        $stmt = mysqli_prepare($koneksi, "SELECT id FROM kpi_penilaian WHERE kode_pegawai = ? AND periode = ?");
+        mysqli_stmt_bind_param($stmt, "ss", $stbCari, $periodeCari);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $penilaian = mysqli_fetch_assoc($result);
+        mysqli_stmt_close($stmt);
 
-    if ($penilaian) {
-        $kpiPenilaianId = $penilaian['id'];
+        if ($penilaian) {
+            $kpiPenilaianId = $penilaian['id'];
 
-        // Ambil semua detail, join ke perspektif, urutkan per perspektif lalu per no_urut
-        $stmtDetail = mysqli_prepare($koneksi, "
-            SELECT ps.id AS perspektif_id, ps.nama_perspektif, ps.urutan,
-                   d.no_urut, d.sasaran_strategis, d.program_inisiatif, d.indikator_kpi,
-                   d.formula, d.satuan, d.polaritas, d.bobot, d.target, d.realisasi,
-                   d.capaian, d.rating, d.nilai_kpi
-            FROM kpi_detail d
-            JOIN perspektif ps ON ps.id = d.perspektif_id
-            WHERE d.kpi_penilaian_id = ?
-            ORDER BY ps.urutan, d.no_urut
-        ");
-        mysqli_stmt_bind_param($stmtDetail, "i", $kpiPenilaianId);
-        mysqli_stmt_execute($stmtDetail);
-        $resultDetail = mysqli_stmt_get_result($stmtDetail);
+            $stmtDetail = mysqli_prepare($koneksi, "
+                SELECT ps.nama_perspektif, ps.urutan,
+                       d.no_urut, d.sasaran_strategis, d.program_inisiatif, d.indikator_kpi,
+                       d.formula, d.satuan, d.polaritas, d.bobot, d.target, d.realisasi,
+                       d.capaian, d.rating, d.nilai_kpi
+                FROM kpi_detail d
+                JOIN perspektif ps ON ps.id = d.perspektif_id
+                WHERE d.kpi_penilaian_id = ?
+                ORDER BY ps.urutan, d.no_urut
+            ");
+            mysqli_stmt_bind_param($stmtDetail, "i", $kpiPenilaianId);
+            mysqli_stmt_execute($stmtDetail);
+            $resultDetail = mysqli_stmt_get_result($stmtDetail);
 
-        while ($baris = mysqli_fetch_assoc($resultDetail)) {
-            $namaPerspektif = $baris['nama_perspektif'];
-            if (!isset($dataPerPerspektif[$namaPerspektif])) {
-                $dataPerPerspektif[$namaPerspektif] = [
-                    'rows' => [],
-                    'total_bobot' => 0
-                ];
+            while ($baris = mysqli_fetch_assoc($resultDetail)) {
+                $nama = $baris['nama_perspektif'];
+                if (!isset($dataPerPerspektif[$nama])) {
+                    $dataPerPerspektif[$nama] = ['rows' => [], 'total_bobot' => 0, 'total_nilai' => 0];
+                }
+                $dataPerPerspektif[$nama]['rows'][] = $baris;
+                $dataPerPerspektif[$nama]['total_bobot'] += floatval($baris['bobot']);
+                $dataPerPerspektif[$nama]['total_nilai'] += floatval($baris['nilai_kpi']);
             }
-            $dataPerPerspektif[$namaPerspektif]['rows'][] = $baris;
-            $dataPerPerspektif[$namaPerspektif]['total_bobot'] += floatval($baris['bobot']);
+            mysqli_stmt_close($stmtDetail);
         }
     }
 }
@@ -90,30 +87,17 @@ if ($divisiPilih !== '' && $periodePilih !== '') {
 <main class="main-panel">
 
     <div class="content-card mb-4">
+        <a href="direktur.php" class="btn btn-outline-secondary mb-3"><i class="bi bi-arrow-left me-1"></i> Kembali</a>
         <h4 class="fw-bold mb-3"><i class="bi bi-eye-fill me-2 text-primary"></i>Lihat Penilaian KPI</h4>
 
         <form method="GET" class="row g-3 align-items-end">
             <div class="col-md-4">
-                <label class="form-label fw-semibold">Divisi</label>
-                <select name="divisi" class="form-select" required>
-                    <option value="">-- Pilih Divisi --</option>
-                    <?php foreach ($daftarDivisi as $d): ?>
-                        <option value="<?= htmlspecialchars($d) ?>" <?= ($d === $divisiPilih) ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($d) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
+                <label class="form-label fw-semibold">Masukkan STB</label>
+                <input type="text" name="stb" class="form-control" placeholder="Contoh: 6381" value="<?= htmlspecialchars($stbCari) ?>" required>
             </div>
             <div class="col-md-4">
-                <label class="form-label fw-semibold">Periode</label>
-                <select name="periode" class="form-select" required>
-                    <option value="">-- Pilih Periode --</option>
-                    <?php foreach ($daftarPeriode as $p): ?>
-                        <option value="<?= htmlspecialchars($p) ?>" <?= ($p == $periodePilih) ? 'selected' : '' ?>>
-                            <?= htmlspecialchars($p) ?>
-                        </option>
-                    <?php endforeach; ?>
-                </select>
+                <label class="form-label fw-semibold">Tahun</label>
+                <input type="number" name="periode" class="form-control" placeholder="Contoh: 2025" value="<?= htmlspecialchars($periodeCari) ?>" required>
             </div>
             <div class="col-md-4">
                 <button type="submit" class="btn btn-primary w-100">
@@ -123,65 +107,84 @@ if ($divisiPilih !== '' && $periodePilih !== '') {
         </form>
     </div>
 
-    <?php if ($divisiPilih !== '' && $periodePilih !== ''): ?>
+    <?php if ($sudahCari): ?>
 
-        <?php if (empty($dataPerPerspektif)): ?>
-            <div class="alert alert-warning">
-                Belum ada data KPI untuk Divisi "<?= htmlspecialchars($divisiPilih) ?>" periode "<?= htmlspecialchars($periodePilih) ?>".
+        <?php if (!$pegawai): ?>
+            <div class="alert alert-danger">
+                STB "<?= htmlspecialchars($stbCari) ?>" tidak ditemukan di data pegawai.
             </div>
         <?php else: ?>
 
-            <?php foreach ($dataPerPerspektif as $namaPerspektif => $kelompok): ?>
-                <div class="content-card mb-4">
-                    <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
-                        <h5 class="fw-bold text-primary mb-0"><?= htmlspecialchars($namaPerspektif) ?></h5>
-                        <span class="badge bg-secondary px-3 py-2">
-                            Total Bobot: <?= number_format($kelompok['total_bobot'], 2) ?>%
-                        </span>
-                    </div>
-                    <div class="table-responsive">
-                        <table class="table table-hover table-bordered align-middle mb-0">
-                            <thead class="table-light text-center">
-                                <tr>
-                                    <th>NO</th>
-                                    <th>SASARAN STRATEGIS</th>
-                                    <th>PROGRAM / INISIATIF</th>
-                                    <th>INDIKATOR KPI</th>
-                                    <th>FORMULA</th>
-                                    <th>SATUAN</th>
-                                    <th>POLARITAS</th>
-                                    <th>BOBOT (%)</th>
-                                    <th>TARGET</th>
-                                    <th>REALISASI</th>
-                                    <th>CAPAIAN</th>
-                                    <th>RATING</th>
-                                    <th>NILAI KPI</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($kelompok['rows'] as $baris): ?>
-                                    <tr>
-                                        <td class="text-center"><?= $baris['no_urut'] ?></td>
-                                        <td><?= htmlspecialchars($baris['sasaran_strategis']) ?></td>
-                                        <td><?= htmlspecialchars($baris['program_inisiatif']) ?></td>
-                                        <td><?= htmlspecialchars($baris['indikator_kpi']) ?></td>
-                                        <td><?= htmlspecialchars($baris['formula']) ?></td>
-                                        <td class="text-center"><?= htmlspecialchars($baris['satuan']) ?></td>
-                                        <td class="text-center"><?= htmlspecialchars($baris['polaritas']) ?></td>
-                                        <td class="text-end"><?= number_format($baris['bobot'], 2) ?></td>
-                                        <td class="text-end"><?= number_format($baris['target'], 2) ?></td>
-                                        <td class="text-end"><?= number_format($baris['realisasi'], 2) ?></td>
-                                        <td class="text-end"><?= number_format($baris['capaian'], 2) ?>%</td>
-                                        <td class="text-end"><?= number_format($baris['rating'], 2) ?></td>
-                                        <td class="text-end"><?= number_format($baris['nilai_kpi'], 2) ?></td>
-                                    </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
+            <!-- Kartu Data Pegawai -->
+            <div class="content-card mb-4">
+                <h5 class="fw-bold text-primary mb-3"><i class="bi bi-person-badge-fill me-2"></i>Data Pegawai</h5>
+                <div class="row">
+                    <div class="col-md-3"><strong>STB</strong><br><?= htmlspecialchars($pegawai['kode_pegawai']) ?></div>
+                    <div class="col-md-3"><strong>Nama</strong><br><?= htmlspecialchars($pegawai['nama']) ?></div>
+                    <div class="col-md-3"><strong>Jabatan</strong><br><?= htmlspecialchars($pegawai['jabatan'] ?? '-') ?></div>
+                    <div class="col-md-3"><strong>Kantor</strong><br><?= htmlspecialchars($pegawai['kantor'] ?? '-') ?></div>
                 </div>
-            <?php endforeach; ?>
+                <div class="mt-2 text-muted">Tahun Penilaian: <?= htmlspecialchars($periodeCari) ?></div>
+            </div>
 
+            <?php if (empty($dataPerPerspektif)): ?>
+                <div class="alert alert-warning">
+                    Belum ada data KPI untuk STB "<?= htmlspecialchars($stbCari) ?>" tahun "<?= htmlspecialchars($periodeCari) ?>".
+                </div>
+            <?php else: ?>
+
+                <?php foreach ($dataPerPerspektif as $namaPerspektif => $kelompok): ?>
+                    <div class="content-card mb-4">
+                        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold text-primary mb-0"><?= htmlspecialchars($namaPerspektif) ?></h5>
+                            <span class="badge bg-secondary px-3 py-2">
+                                Total Bobot: <?= number_format($kelompok['total_bobot'], 2) ?>%
+                            </span>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover table-bordered align-middle mb-0">
+                                <thead class="table-light text-center">
+                                    <tr>
+                                        <th>NO</th>
+                                        <th>SASARAN STRATEGIS</th>
+                                        <th>PROGRAM / INISIATIF</th>
+                                        <th>INDIKATOR KPI</th>
+                                        <th>FORMULA</th>
+                                        <th>SATUAN</th>
+                                        <th>POLARITAS</th>
+                                        <th>BOBOT (%)</th>
+                                        <th>TARGET</th>
+                                        <th>REALISASI</th>
+                                        <th>CAPAIAN</th>
+                                        <th>RATING</th>
+                                        <th>NILAI KPI</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php foreach ($kelompok['rows'] as $baris): ?>
+                                        <tr>
+                                            <td class="text-center"><?= $baris['no_urut'] ?></td>
+                                            <td><?= htmlspecialchars($baris['sasaran_strategis']) ?></td>
+                                            <td><?= htmlspecialchars($baris['program_inisiatif']) ?></td>
+                                            <td><?= htmlspecialchars($baris['indikator_kpi']) ?></td>
+                                            <td><?= htmlspecialchars($baris['formula']) ?></td>
+                                            <td class="text-center"><?= htmlspecialchars($baris['satuan']) ?></td>
+                                            <td class="text-center"><?= htmlspecialchars($baris['polaritas']) ?></td>
+                                            <td class="text-end"><?= number_format($baris['bobot'], 2) ?></td>
+                                            <td class="text-end"><?= number_format($baris['target'], 2) ?></td>
+                                            <td class="text-end"><?= number_format($baris['realisasi'], 2) ?></td>
+                                            <td class="text-end"><?= number_format($baris['capaian'], 2) ?>%</td>
+                                            <td class="text-end"><?= number_format($baris['rating'], 2) ?></td>
+                                            <td class="text-end"><?= number_format($baris['nilai_kpi'], 2) ?></td>
+                                        </tr>
+                                    <?php endforeach; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+
+            <?php endif; ?>
         <?php endif; ?>
     <?php endif; ?>
 

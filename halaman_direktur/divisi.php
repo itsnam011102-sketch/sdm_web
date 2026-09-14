@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Form KPI Direktur</title>
+    <title>Form KPI Divisi</title>
 
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -210,10 +210,10 @@
                 <a class="kpi-nav-item" href="../kpi.php">
                    <i class="bi bi-diagram-3-fill me-1"></i> HOME
                 </a>
-                <a class="kpi-nav-item active" href="halaman_direktur/direktur.php">
+                <a class="kpi-nav-item" href="halaman_direktur/direktur.php">
                     <i class="bi bi-person-badge-fill me-1"></i> DIREKTUR
                 </a>
-                <a class="kpi-nav-item" href="halaman_divisi/divisi.php">
+                <a class="kpi-nav-item active" href="halaman_divisi/divisi.php">
                     <i class="bi bi-diagram-3-fill me-1"></i> DIVISI
                 </a>
                 <a class="kpi-nav-item" href="#">

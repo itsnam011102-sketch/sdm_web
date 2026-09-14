@@ -1,11 +1,10 @@
 <?php
 // ============================================
-// PROSES SIMPAN FORM KPI DIREKTUR
-// Menyimpan header (kpi_penilaian) + detail per perspektif (kpi_detail)
+// PROSES SIMPAN FORM KPI - berbasis STB (kode_pegawai)
 // File ini ada di dalam folder halaman_direktur/, sejajar dengan direktur.php
 // ============================================
 
-require_once '../config.php'; // ambil $host, $user, $pass, $db
+require_once '../config.php';
 
 $koneksi = mysqli_connect($host, $user, $pass, $db);
 if (!$koneksi) {
@@ -17,12 +16,24 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     die('Akses tidak valid.');
 }
 
-// ---------- 1. Ambil data header ----------
-$divisi  = trim($_POST['divisi'] ?? '');
+// ---------- 1. Ambil STB & Periode ----------
+$stb     = trim($_POST['stb'] ?? '');
 $periode = trim($_POST['periode'] ?? '');
 
-if ($divisi === '' || $periode === '') {
-    die('Divisi dan Periode wajib diisi.');
+if ($stb === '' || $periode === '') {
+    die('STB dan Tahun wajib diisi.');
+}
+
+// Pastikan STB itu benar-benar ada di tabel employe
+$stmtCekPegawai = mysqli_prepare($koneksi, "SELECT kode_pegawai, nama FROM employe WHERE kode_pegawai = ?");
+mysqli_stmt_bind_param($stmtCekPegawai, "s", $stb);
+mysqli_stmt_execute($stmtCekPegawai);
+$resultCek = mysqli_stmt_get_result($stmtCekPegawai);
+$pegawai = mysqli_fetch_assoc($resultCek);
+mysqli_stmt_close($stmtCekPegawai);
+
+if (!$pegawai) {
+    die('STB "' . htmlspecialchars($stb) . '" tidak ditemukan di data pegawai. Cek kembali nomornya.');
 }
 
 // ---------- 2. Ambil semua array baris ----------
@@ -42,7 +53,6 @@ $perspektif = $_POST['perspektif'] ?? []; // WAJIB ada di setiap baris (hidden i
 
 $totalBaris = count($sasaran);
 
-// Mapping nama perspektif (dari form) -> id di tabel master `perspektif`
 $mapPerspektif = [
     'perspektif_keuangan'                  => 1,
     'perspektif_pelanggan'                 => 2,
@@ -53,22 +63,21 @@ $mapPerspektif = [
 mysqli_begin_transaction($koneksi);
 
 try {
-    // ---------- 3. Simpan / update header kpi_penilaian ----------
+    // ---------- 3. Simpan / update header kpi_penilaian (kunci: kode_pegawai + periode) ----------
     $stmtHeader = mysqli_prepare(
         $koneksi,
-        "INSERT INTO kpi_penilaian (divisi, periode) VALUES (?, ?)
+        "INSERT INTO kpi_penilaian (kode_pegawai, periode) VALUES (?, ?)
          ON DUPLICATE KEY UPDATE updated_at = NOW()"
     );
-    mysqli_stmt_bind_param($stmtHeader, "ss", $divisi, $periode);
+    mysqli_stmt_bind_param($stmtHeader, "ss", $stb, $periode);
     mysqli_stmt_execute($stmtHeader);
     mysqli_stmt_close($stmtHeader);
 
-    // Ambil id kpi_penilaian (baik baru dibuat maupun sudah ada sebelumnya)
     $stmtGetId = mysqli_prepare(
         $koneksi,
-        "SELECT id FROM kpi_penilaian WHERE divisi = ? AND periode = ?"
+        "SELECT id FROM kpi_penilaian WHERE kode_pegawai = ? AND periode = ?"
     );
-    mysqli_stmt_bind_param($stmtGetId, "ss", $divisi, $periode);
+    mysqli_stmt_bind_param($stmtGetId, "ss", $stb, $periode);
     mysqli_stmt_execute($stmtGetId);
     $resultId = mysqli_stmt_get_result($stmtGetId);
     $rowId = mysqli_fetch_assoc($resultId);
@@ -79,8 +88,7 @@ try {
     }
     $kpiPenilaianId = $rowId['id'];
 
-    // Kalau divisi+periode ini sudah pernah disimpan sebelumnya,
-    // hapus dulu detail lama supaya tidak dobel (replace total).
+    // Hapus detail lama supaya tidak dobel (replace total)
     $stmtHapus = mysqli_prepare($koneksi, "DELETE FROM kpi_detail WHERE kpi_penilaian_id = ?");
     mysqli_stmt_bind_param($stmtHapus, "i", $kpiPenilaianId);
     mysqli_stmt_execute($stmtHapus);
@@ -95,11 +103,10 @@ try {
          VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
     );
 
-    $counterPerspektif = []; // penomoran ulang (no_urut) per perspektif
+    $counterPerspektif = [];
 
     for ($i = 0; $i < $totalBaris; $i++) {
 
-        // Lewati baris yang benar-benar kosong
         $sasaranBaris = trim($sasaran[$i] ?? '');
         $kpiBaris     = trim($kpiNama[$i] ?? '');
         if ($sasaranBaris === '' && $kpiBaris === '') {

@@ -282,7 +282,7 @@
                 </div>
                 <span class="go">Buka <i class="bi bi-arrow-right"></i></span>
             </a>
-            <a class="scope-card" href="#">
+            <a class="scope-card" href="divisi.php">
                 <div class="scope-icon"><i class="bi bi-diagram-3-fill"></i></div>
                 <div>
                     <h3>Divisi</h3>
