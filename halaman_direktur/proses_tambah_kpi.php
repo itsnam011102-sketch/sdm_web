@@ -25,6 +25,7 @@ if ($stb === '' || $periode === '') {
 }
 
 // Pastikan STB itu benar-benar ada di tabel employe
+// 1. Cek STB di tabel employe terlebih dahulu
 $stmtCekPegawai = mysqli_prepare($koneksi, "SELECT kode_pegawai, nama FROM employe WHERE kode_pegawai = ?");
 mysqli_stmt_bind_param($stmtCekPegawai, "s", $stb);
 mysqli_stmt_execute($stmtCekPegawai);
@@ -32,8 +33,19 @@ $resultCek = mysqli_stmt_get_result($stmtCekPegawai);
 $pegawai = mysqli_fetch_assoc($resultCek);
 mysqli_stmt_close($stmtCekPegawai);
 
+// 2. Jika tidak ada di employe, cari di tabel pkwt
 if (!$pegawai) {
-    die('STB "' . htmlspecialchars($stb) . '" tidak ditemukan di data pegawai. Cek kembali nomornya.');
+    $stmtCekPkwt = mysqli_prepare($koneksi, "SELECT kode_pegawai, nama FROM pkwt WHERE kode_pegawai = ?");
+    mysqli_stmt_bind_param($stmtCekPkwt, "s", $stb);
+    mysqli_stmt_execute($stmtCekPkwt);
+    $resultPkwt = mysqli_stmt_get_result($stmtCekPkwt);
+    $pegawai = mysqli_fetch_assoc($resultPkwt);
+    mysqli_stmt_close($stmtCekPkwt);
+}
+
+// 3. Jika di kedua tabel tidak ditemukan, berikan pesan error
+if (!$pegawai) {
+    die('STB "' . htmlspecialchars($stb) . '" tidak ditemukan di data pegawai (Employe & PKWT). Cek kembali nomornya.');
 }
 
 // ---------- 2. Ambil semua array baris ----------

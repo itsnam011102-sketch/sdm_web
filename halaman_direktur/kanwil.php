@@ -213,13 +213,13 @@
                 <a class="kpi-nav-item" href="halaman_direktur/direktur.php">
                     <i class="bi bi-person-badge-fill me-1"></i> DIREKTUR
                 </a>
-                <a class="kpi-nav-item active" href="divisi.php">
+                <a class="kpi-nav-item " href="divisi.php">
                     <i class="bi bi-diagram-3-fill me-1"></i> DIVISI
                 </a>
-                <a class="kpi-nav-item" href="#">
+                <a class="kpi-nav-item active" href="halaman_direktur/kanwil.php">
                     <i class="bi bi-building-fill me-1"></i> KANWIL
                 </a>
-                <a class="kpi-nav-item" href="#">
+                <a class="kpi-nav-item" href="halaman_direktur/kacab.php">
                     <i class="bi bi-geo-alt-fill me-1"></i> KACAB
                 </a>
                 <a class="kpi-nav-item" href="lihat_kpi.php">

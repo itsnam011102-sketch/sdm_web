@@ -282,7 +282,7 @@
                 </div>
                 <span class="go">Buka <i class="bi bi-arrow-right"></i></span>
             </a>
-            <a class="scope-card" href="divisi.php">
+            <a class="scope-card" href="halaman_direktur/divisi.php">
                 <div class="scope-icon"><i class="bi bi-diagram-3-fill"></i></div>
                 <div>
                     <h3>Divisi</h3>
@@ -290,7 +290,7 @@
                 </div>
                 <span class="go">Buka <i class="bi bi-arrow-right"></i></span>
             </a>
-            <a class="scope-card" href="#">
+            <a class="scope-card" href="halaman_direktur/kanwil.php">
                 <div class="scope-icon"><i class="bi bi-building-fill"></i></div>
                 <div>
                     <h3>Kanwil</h3>
@@ -298,7 +298,7 @@
                 </div>
                 <span class="go">Buka <i class="bi bi-arrow-right"></i></span>
             </a>
-            <a class="scope-card" href="#">
+            <a class="scope-card" href="halaman_direktur/kacab.php">
                 <div class="scope-icon"><i class="bi bi-geo-alt-fill"></i></div>
                 <div>
                     <h3>Kacab</h3>

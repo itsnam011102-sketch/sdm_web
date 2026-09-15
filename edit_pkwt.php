@@ -54,6 +54,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $alamat                 = trim($_POST['alamat'] ?? '');
     $jabatan                = trim($_POST['jabatan'] ?? '');
     $kantor                 = trim($_POST['kantor'] ?? '');
+    $unit_kerja             = trim($_POST['unit_kerja'] ?? '');
+    $bagian                 = trim($_POST['bagian'] ?? '');
     $tanggal_mulai_bekerja  = trim($_POST['tanggal_mulai_bekerja'] ?? '');
     
 
@@ -75,6 +77,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   alamat='$alamat',
                   jabatan='$jabatan',
                   kantor='$kantor',
+                  unit_kerja='$unit_kerja',
+                  bagian='$bagian',
                   tanggal_mulai_bekerja='$tgl_mulai_bekerja'
                   WHERE id=$id";
         
@@ -285,7 +289,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                     </div>
 
-
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Unit Kerja</label>
+                            <input type="text" name="unit_kerja" value="<?php echo htmlspecialchars($pkwt['unit_kerja'] ?? ''); ?>">
+                        </div>
+                        <div class="form-group">
+                            <label>Bagian</label>
+                            <input type="text" name="bagian" value="<?php echo htmlspecialchars($pkwt['bagian'] ?? ''); ?>">
+                        </div>
+                    </div>
                     <div class="form-group">
                             <label>Tanggal Mulai Bekerja</label>
                             <input type="date" name="tanggal_mulai_bekerja" value="<?php echo htmlspecialchars($pkwt['tanggal_mulai_bekerja'] ?? ''); ?>">

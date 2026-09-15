@@ -33,7 +33,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $alamat                = trim($_POST['alamat'] ?? '');
     $jabatan               = trim($_POST['jabatan'] ?? '');
     $kantor                = trim($_POST['kantor'] ?? '');
-    $tanggal_mulai_bekerja  = trim($_POST['tanggal_mulai_bekerja'] ?? '');
+    $unit_kerja            = trim($_POST['unit_kerja'] ?? '');
+    $bagian                = trim($_POST['bagian'] ?? '');
+    $tanggal_mulai_bekerja = trim($_POST['tanggal_mulai_bekerja'] ?? '');
     $tanggal_selesai_bekerja = trim($_POST['tanggal_selesai_bekerja'] ?? '');
 
     // Konversi tanggal kosong ke NULL
@@ -43,8 +45,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (empty($nama) || empty($email) || empty($nik)) {
         $error = 'Nama, Email, dan NIK tidak boleh kosong!';
     } else {
-        $query = "INSERT INTO pkwt (kode_pegawai, nama, email, no_hp, jenis_kelamin, nik, tempat_lahir, tanggal_lahir, alamat, jabatan, kantor, tanggal_mulai_bekerja, tanggal_selesai_bekerja) 
-                  VALUES ('$kode_pegawai', '$nama', '$email', '$no_hp', '$jenis_kelamin', '$nik', '$tempat_lahir', '$tanggal_lahir', '$alamat', '$jabatan', '$kantor', $tgl_mulai, $tgl_selesai)";
+        $query = "INSERT INTO pkwt (kode_pegawai, nama, email, no_hp, jenis_kelamin, nik, tempat_lahir, tanggal_lahir, alamat, jabatan, kantor, unit_kerja, bagian, tanggal_mulai_bekerja, tanggal_selesai_bekerja) 
+                  VALUES ('$kode_pegawai', '$nama', '$email', '$no_hp', '$jenis_kelamin', '$nik', '$tempat_lahir', '$tanggal_lahir', '$alamat', '$jabatan', '$kantor', '$unit_kerja', '$bagian', $tgl_mulai, $tgl_selesai)";
         
         if (mysqli_query($conn, $query)) {
             $success = 'Data PKWT berhasil ditambahkan!';
@@ -250,7 +252,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </select>
                         </div>
                     </div>
-
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label>Unit Kerja</label>
+                            <input type="text" name="unit_kerja" placeholder="Cth: IT Department">
+                        </div>
+                        <div class="form-group">
+                            <label>Bagian</label>
+                            <input type="text" name="bagian" placeholder="Cth: Development">
+                        </div>
                     <div class="form-grid">
                         <div class="form-group">
                             <label>Tanggal Mulai Bekerja</label>

@@ -7,10 +7,10 @@ if (!isset($_SESSION['user'])) {
 
 require_once 'koneksi.php';
 
-// Ambil daftar kantor dari database
-$query_kantor = "SELECT DISTINCT kantor FROM employe WHERE kantor IS NOT NULL AND kantor != '' ORDER BY kantor";
-$result_kantor = mysqli_query($conn, $query_kantor);
-$list_kantor = [];
+// Ambil daftar unit kerja dari database
+$query_unit_kerja = "SELECT DISTINCT unit_kerja FROM employe WHERE unit_kerja IS NOT NULL AND unit_kerja != '' ORDER BY unit_kerja";
+$result_unit_kerja = mysqli_query($conn, $query_unit_kerja);
+$list_unit_kerja = [];
 
 if ($result_kantor) {
     while ($row = mysqli_fetch_assoc($result_kantor)) {
@@ -32,13 +32,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $tanggal_lahir = trim($_POST['tanggal_lahir'] ?? '');
     $alamat = trim($_POST['alamat'] ?? '');
     $jabatan = trim($_POST['jabatan'] ?? '');
-    $kantor = trim($_POST['kantor'] ?? '');
+    $unit_kerja = trim($_POST['unit_kerja'] ?? '');
+    $bagian = trim($_POST['bagian'] ?? '');
 
     if (empty($nama) || empty($email) || empty($nik)) {
         $error = 'Nama, Email, dan NIK tidak boleh kosong!';
     } else {
-        $query = "INSERT INTO employe (kode_pegawai, nama, email, no_hp, jenis_kelamin, nik, tempat_lahir, tanggal_lahir, alamat, jabatan, kantor) 
-                  VALUES ('$kode_pegawai', '$nama', '$email', '$no_hp', '$jenis_kelamin', '$nik', '$tempat_lahir', '$tanggal_lahir', '$alamat', '$jabatan', '$kantor')";
+        $query = "INSERT INTO employe (kode_pegawai, nama, email, no_hp, jenis_kelamin, nik, tempat_lahir, tanggal_lahir, alamat, jabatan, unit_kerja, bagian) 
+                  VALUES ('$kode_pegawai', '$nama', '$email', '$no_hp', '$jenis_kelamin', '$nik', '$tempat_lahir', '$tanggal_lahir', '$alamat', '$jabatan', '$unit_kerja', '$bagian')";
         
         if (mysqli_query($conn, $query)) {
             $success = 'Data pegawai berhasil ditambahkan!';
@@ -234,13 +235,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     <div class="form-grid full">
                         <div class="form-group">
-                            <label>Kantor</label>
-                            <select name="kantor">
-                                <option value="">-- Pilih Kantor --</option>
-                                <?php foreach ($list_kantor as $k): ?>
-                                    <option value="<?php echo htmlspecialchars($k); ?>"><?php echo htmlspecialchars($k); ?></option>
+                            <label>Unit Kerja</label>
+                            <select name="unit_kerja">
+                                <option value="">-- Pilih Unit Kerja --</option>
+                                <?php foreach ($list_unit_kerja as $u): ?>
+                                    <option value="<?php echo htmlspecialchars($u); ?>"><?php echo htmlspecialchars($u); ?></option>
                                 <?php endforeach; ?>
                             </select>
+                        </div>
+                    </div>
+                    <div class="form-grid full">
+                        <div class="form-group">
+                            <label>Bagian</label>
+                            <input type="text" name="bagian" placeholder="Cth: Bagian Keuangan">
                         </div>
                     </div>
                     <br>

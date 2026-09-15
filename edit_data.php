@@ -7,14 +7,14 @@ if (!isset($_SESSION['user'])) {
 
 require_once 'koneksi.php';
 
-// Ambil daftar kantor dari database
-$query_kantor = "SELECT DISTINCT kantor FROM employe WHERE kantor IS NOT NULL AND kantor != '' ORDER BY kantor";
-$result_kantor = mysqli_query($conn, $query_kantor);
-$list_kantor = [];
+// Ambil daftar unit kerja dari database
+$query_unit_kerja = "SELECT DISTINCT unit_kerja FROM employe WHERE unit_kerja IS NOT NULL AND unit_kerja != '' ORDER BY unit_kerja";
+$result_unit_kerja = mysqli_query($conn, $query_unit_kerja);
+$list_unit_kerja = [];
 
-if ($result_kantor) {
-    while ($row = mysqli_fetch_assoc($result_kantor)) {
-        $list_kantor[] = $row['kantor'];
+if ($result_unit_kerja) {
+    while ($row = mysqli_fetch_assoc($result_unit_kerja)) {
+        $list_unit_kerja[] = $row['unit_kerja'];
     }
 }
 
@@ -53,7 +53,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $tanggal_lahir = trim($_POST['tanggal_lahir'] ?? '');
     $alamat        = trim($_POST['alamat'] ?? '');
     $jabatan       = trim($_POST['jabatan'] ?? '');
-    $kantor        = trim($_POST['kantor'] ?? '');
+    $unit_kerja    = trim($_POST['unit_kerja'] ?? '');
+    $bagian        = trim($_POST['bagian'] ?? '');
 
     if (empty($nama) || empty($email) || empty($nik)) {
         $error = 'Nama, Email, dan NIK tidak boleh kosong!';
@@ -69,7 +70,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                   tanggal_lahir='$tanggal_lahir',
                   alamat='$alamat',
                   jabatan='$jabatan',
-                  kantor='$kantor'
+                  unit_kerja='$unit_kerja',
+                  bagian='$bagian'
                   WHERE id=$id";
         
         if (mysqli_query($conn, $query)) {
@@ -272,18 +274,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                     <div class="form-grid full">
                         <div class="form-group">
-                            <label>Kantor</label>
-                            <select name="kantor">
-                                <option value="">-- Pilih Kantor --</option>
-                                <?php foreach ($list_kantor as $k): ?>
-                                    <option value="<?php echo htmlspecialchars($k); ?>" <?php echo (($pegawai['kantor'] ?? '') === $k) ? 'selected' : ''; ?>>
-                                        <?php echo htmlspecialchars($k); ?>
+                            <label>Unit Kerja</label>
+                            <select name="unit_kerja">
+                                <option value="">-- Pilih Unit Kerja --</option>
+                                <?php foreach ($list_unit_kerja as $u): ?>
+                                    <option value="<?php echo htmlspecialchars($u); ?>" <?php echo (($pegawai['unit_kerja'] ?? '') === $u) ? 'selected' : ''; ?>>
+                                        <?php echo htmlspecialchars($u); ?>
                                     </option>
                                 <?php endforeach; ?>
                             </select>
                         </div>
                     </div>
-
+                    <div class="form-grid full">
+                        <div class="form-group">
+                            <label>Bagian</label>
+                            <input type="text" name="bagian" value="<?php echo htmlspecialchars($pegawai['bagian'] ?? ''); ?>">
+                        </div>
                     <div class="form-actions">
                         <button type="submit" class="btn-submit">✅ Perbarui Data</button>
                         <a href="data.php" class="btn-back">← Kembali</a>

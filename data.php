@@ -37,8 +37,7 @@ if ($page > $total_pages) {
 }
 
 // Query data pegawai sesuai limit & offset
-$query  = "SELECT id, kode_pegawai, nama, email, no_hp, jenis_kelamin, nik, alamat, tempat_lahir, tanggal_lahir, jabatan, kantor 
-           FROM employe 
+$query  = "SELECT id, kode_pegawai, nama, email, no_hp, jenis_kelamin, nik, tempat_lahir, tanggal_lahir,  alamat,  unit_kerja, bagian, jabatan FROM employe
            {$where} 
            ORDER BY id DESC 
            LIMIT {$limit} OFFSET {$offset}";
@@ -177,7 +176,8 @@ if ($result) {
                                 <th>Tempat Lahir</th>
                                 <th>Tanggal Lahir</th>
                                 <th>Jabatan</th>
-                                <th>Kantor</th>
+                                <th>Unit Kerja</th>
+                                <th>Bagian</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
@@ -196,7 +196,8 @@ if ($result) {
                                     echo "<td>" . htmlspecialchars($p['tempat_lahir'] ?? '') . "</td>";
                                     echo "<td>" . htmlspecialchars($p['tanggal_lahir'] ?? '') . "</td>";
                                     echo "<td>" . htmlspecialchars($p['jabatan'] ?? '') . "</td>";
-                                    echo "<td>" . htmlspecialchars($p['kantor'] ?? '') . "</td>";
+                                    echo "<td>" . htmlspecialchars($p['unit_kerja'] ?? '') . "</td>";
+                                    echo "<td>" . htmlspecialchars($p['bagian'] ?? '') . "</td>";
                                     echo "<td class='action-buttons'>";
                                     echo "<a href='edit_data.php?id=" . $p['id'] . "' class='btn-edit'>✏️ Edit</a> ";
                                     echo "<a href='hapus_data.php?id=" . $p['id'] . "' class='btn-hapus' onclick='return confirm(\"Yakin ingin hapus?\")'>🗑️ Hapus</a>";

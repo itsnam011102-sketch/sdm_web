@@ -37,7 +37,7 @@ if ($page > $total_pages) {
 }
 
 // Query data pegawai sesuai limit & offset
-$query  = "SELECT id, kode_pegawai, nama, email, no_hp, jenis_kelamin, nik, alamat, tempat_lahir, tanggal_lahir, jabatan, kantor 
+$query  = "SELECT id, kode_pegawai, nama, email, no_hp, jenis_kelamin, nik, alamat, tempat_lahir, tanggal_lahir, jabatan, kantor, unit_kerja, bagian, tanggal_mulai_bekerja 
            FROM pkwt 
            {$where} 
            ORDER BY id DESC 
@@ -181,6 +181,8 @@ if ($result) {
                                 <th>Tanggal Lahir</th>
                                 <th>Jabatan</th>
                                 <th>Kantor</th>
+                                <th>Unit Kerja</th>
+                                <th>Bagian</th>
                                 <th>Tanggal Mulai Bekerja</th>
                                 <th>Aksi</th>
                             </tr>
@@ -201,16 +203,18 @@ if ($result) {
                                     echo "<td>" . htmlspecialchars($p['tanggal_lahir'] ?? '') . "</td>";
                                     echo "<td>" . htmlspecialchars($p['jabatan'] ?? '') . "</td>";
                                     echo "<td>" . htmlspecialchars($p['kantor'] ?? '') . "</td>";
+                                    echo "<td>" . htmlspecialchars($p['unit_kerja'] ?? '') . "</td>";
+                                    echo "<td>" . htmlspecialchars($p['bagian'] ?? '') . "</td>";
                                     echo "<td>" . htmlspecialchars($p['tanggal_mulai_bekerja'] ?? '') . "</td>";
                                     echo "<td class='action-buttons'>";
-                                    echo "<a href='edit_data.php?id=" . $p['id'] . "' class='btn-edit'>✏️ Edit</a> ";
-                                    echo "<a href='hapus_data.php?id=" . $p['id'] . "' class='btn-hapus' onclick='return confirm(\"Yakin ingin hapus?\")'>🗑️ Hapus</a>";
+                                    echo "<a href='edit_pkwt.php?id=" . $p['id'] . "' class='btn-edit'>✏️ Edit</a> ";
+                                    echo "<a href='hapus_pkwt.php?id=" . $p['id'] . "' class='btn-hapus' onclick='return confirm(\"Yakin ingin hapus?\")'>🗑️ Hapus</a>";
                                     echo "</td>";
                                     echo "</tr>";
                                 }
                             } else {
                                 if (!empty($search)) {
-                                    echo "<tr><td colspan='12' class='no-results'>Tidak ada hasil pencarian untuk '<strong>" . htmlspecialchars($search) . "</strong>'</td></tr>";
+                                    echo "<tr><td colspan='15' class='no-results'>Tidak ada hasil pencarian untuk '<strong>" . htmlspecialchars($search) . "</strong>'</td></tr>";
                                 } else {
                                     echo "<tr><td colspan='12' class='no-results'>Tidak ada data pegawai</td></tr>";
                                 }

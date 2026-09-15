@@ -21,13 +21,23 @@ $sudahCari = ($stbCari !== '' && $periodeCari !== '');
 
 if ($sudahCari) {
 
-    // 1. Ambil data pegawai dari tabel employe berdasarkan STB (kode_pegawai)
-    $stmtPegawai = mysqli_prepare($koneksi, "SELECT kode_pegawai, nama, jabatan, kantor, email, no_hp FROM employe WHERE kode_pegawai = ?");
+   // 1. Ambil data pegawai dari tabel employe berdasarkan STB (kode_pegawai)
+    $stmtPegawai = mysqli_prepare($koneksi, "SELECT kode_pegawai, nama, jabatan, unit_kerja, bagian, email, no_hp FROM employe WHERE kode_pegawai = ?");
     mysqli_stmt_bind_param($stmtPegawai, "s", $stbCari);
     mysqli_stmt_execute($stmtPegawai);
     $resultPegawai = mysqli_stmt_get_result($stmtPegawai);
     $pegawai = mysqli_fetch_assoc($resultPegawai);
     mysqli_stmt_close($stmtPegawai);
+
+    // Jika tidak ditemukan di employe, cari di tabel pkwt
+    if (!$pegawai) {
+        $stmtPkwt = mysqli_prepare($koneksi, "SELECT kode_pegawai, nama, jabatan, unit_kerja, bagian, email, no_hp FROM pkwt WHERE kode_pegawai = ?");
+        mysqli_stmt_bind_param($stmtPkwt, "s", $stbCari);
+        mysqli_stmt_execute($stmtPkwt);
+        $resultPkwt = mysqli_stmt_get_result($stmtPkwt);
+        $pegawai = mysqli_fetch_assoc($resultPkwt);
+        mysqli_stmt_close($stmtPkwt);
+    }
 
     if ($pegawai) {
         // 2. Cari kpi_penilaian sesuai STB + Tahun
@@ -87,7 +97,7 @@ if ($sudahCari) {
 <main class="main-panel">
 
     <div class="content-card mb-4">
-        <a href="direktur.php" class="btn btn-outline-secondary mb-3"><i class="bi bi-arrow-left me-1"></i> Kembali</a>
+        <a href="/sdm_web/kpi.php" class="btn btn-outline-secondary mb-3"><i class="bi bi-arrow-left me-1"></i> Kembali</a>
         <h4 class="fw-bold mb-3"><i class="bi bi-eye-fill me-2 text-primary"></i>Lihat Penilaian KPI</h4>
 
         <form method="GET" class="row g-3 align-items-end">
@@ -119,10 +129,11 @@ if ($sudahCari) {
             <div class="content-card mb-4">
                 <h5 class="fw-bold text-primary mb-3"><i class="bi bi-person-badge-fill me-2"></i>Data Pegawai</h5>
                 <div class="row">
-                    <div class="col-md-3"><strong>STB</strong><br><?= htmlspecialchars($pegawai['kode_pegawai']) ?></div>
-                    <div class="col-md-3"><strong>Nama</strong><br><?= htmlspecialchars($pegawai['nama']) ?></div>
-                    <div class="col-md-3"><strong>Jabatan</strong><br><?= htmlspecialchars($pegawai['jabatan'] ?? '-') ?></div>
-                    <div class="col-md-3"><strong>Kantor</strong><br><?= htmlspecialchars($pegawai['kantor'] ?? '-') ?></div>
+                    <div class="col-md"><strong>STB</strong><br><?= htmlspecialchars($pegawai['kode_pegawai']) ?></div>
+                    <div class="col-md"><strong>Nama</strong><br><?= htmlspecialchars($pegawai['nama']) ?></div>
+                    <div class="col-md"><strong>Jabatan</strong><br><?= htmlspecialchars($pegawai['jabatan'] ?? '-') ?></div>
+                    <div class="col-md"><strong>Unit Kerja</strong><br><?= htmlspecialchars($pegawai['unit_kerja'] ?? '-') ?></div>
+                    <div class="col-md"><strong>Bagian</strong><br><?= htmlspecialchars($pegawai['bagian'] ?? '-') ?></div>
                 </div>
                 <div class="mt-2 text-muted">Tahun Penilaian: <?= htmlspecialchars($periodeCari) ?></div>
             </div>
